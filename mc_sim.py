@@ -110,10 +110,8 @@ class Product:
 def update_inventory(product_list, scenario):
     """
     Updates the inventory on the basis of demand.
-    Drops sold and expired items each day and at the end of each week, calls the restocking function to restock the inventory.
-    :param product: Dataframe of inventory with all items
-    :param expiry: Dictionary of expiry days for all items
-    :param storage: storage capacity for each item
+    Drops sold and expired items each day and at the end of each week, calls the restocking function to restock the inventory
+    :param product_list: Dataframe of inventory with all items
     :param scenario: type of scenario (1 or 2)
     :return: list of Dictionaries for loss and missed profit. Each dictionary again contains a list for each item.
     >>> df1 = pd.DataFrame({'A':[3]*10,'B':[2]*10})
