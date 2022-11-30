@@ -31,7 +31,7 @@ def mod_pert_random(low, likely, high, confidence=4, samples=1):
     return beta
 
 
-# Intiialialize the product below from the user input
+# Intiialialize the product below
 def add_product():
     # Product()
     pass
@@ -107,7 +107,7 @@ class Product:
 
 
 
-def update_inventory(product, scenario):
+def update_inventory(product_list, scenario):
     """
     Updates the inventory on the basis of demand.
     Drops sold and expired items each day and at the end of each week, calls the restocking function to restock the inventory.
@@ -123,69 +123,72 @@ def update_inventory(product, scenario):
     >>> update_inventory(df1,expiry_days,10,2) # doctest: +ELLIPSIS
     [{'A': ...
     """
-    demand = product.simulate_demand()
-    product_inventory = product.build_inventory()
 
-    weekly_wastage = []
-    weekly_loss = []
-    weekly_missed_profit = []
-    weekly_sold_profit = []
+
+    wastage_dict = {product.name: [] for product in product_list}
+    loss_dict = {product.name: [] for product in product_list}
+    missed_profit_dict = {product.name: [] for product in product_list}
+    sold_profit_dict = {product.name: [] for product in product_list}
     previous_demand_list = []
 
     # for df, k in zip(df_list, demand):  # iterating over dataframe and demand of an item
+    for product in product_list:
 
-    week = 1
-    day = 1
-    weekly_expired_items = 0
-    missed = 0
-    item_demand_before_expiry = 0
-    sold = 0
+        demand = product.simulate_demand()
+        product_inventory = product.build_inventory()
 
-    for i in demand:  # demand for each day
+        week = 1
+        day = 1
+        weekly_expired_items = 0
+        missed = 0
+        item_demand_before_expiry = 0
+        sold = 0
 
-        if day <= product.expiry_days:
-            item_demand_before_expiry += i          # add items' demand before it gets expired
+        for i in demand:  # demand for each day
 
-        if i <= len(product_inventory):                        # check if demand is less than the available stock
-            sold += i                               # add sold items
+            if day <= product.expiry_days:
+                item_demand_before_expiry += i          # add items' demand before it gets expired
 
-            product_inventory.drop(product_inventory.index[:i], axis=0, inplace=True)  # sold items hence drop them from inventory dataframe
+            if i <= len(product_inventory):                        # check if demand is less than the available stock
+                sold += i                               # add sold items
+
+                product_inventory.drop(product_inventory.index[:i], axis=0, inplace=True)  # sold items hence drop them from inventory dataframe
+                product_inventory.reset_index(inplace=True, drop=True)
+
+            else:
+                missed += i                             # add demand to missed orders because of not enough stock to fulfill it
+
+            product_inventory = product_inventory - 1  # end of day hence reduce expiry days remaining by 1
+
+            weekly_expired_items += product_inventory[product_inventory < 0].count()  # check expired items and store them
+
+            product_inventory.drop(product_inventory[product_inventory < 0].index, inplace=True)         # Throw expired items i.e. drop those from the dataframe
             product_inventory.reset_index(inplace=True, drop=True)
 
-        else:
-            missed += i                             # add demand to missed orders because of not enough stock to fulfill it
+            if (day == 7 and scenario != 3) or (product_inventory.empty is True and scenario == 3):       # Check if end of week for scenario 1 and 2 or if no stock in inventory for scenario 3
+                previous_demand_list.append(item_demand_before_expiry)
+                items_to_restock = product.restock_quantity(scenario, product_inventory, np.mean(previous_demand_list))            # Call restocking function
 
-        product_inventory = product_inventory - 1  # end of day hence reduce expiry days remaining by 1
+                new_stock = pd.Series(list([product.expiry_days] * items_to_restock))             # Add rows for restocked items
+                product_inventory = product_inventory.append(new_stock, ignore_index=True)
 
-        weekly_expired_items += product_inventory[product_inventory < 0].count()  # check expired items and store them
+                weekly_defective = product.calc_weekly_defective(items_to_restock)                  # check for defective products in restocked items
+                weekly_wastage = weekly_defective + weekly_expired_items        # Total waste products are expired and defective
+                weekly_financials = product.financials(sold, missed, weekly_wastage)         # Call financials to calculate total loss, total profit and missed orders
 
-        product_inventory.drop(product_inventory[product_inventory < 0].index, inplace=True)         # Throw expired items i.e. drop those from the dataframe
-        product_inventory.reset_index(inplace=True, drop=True)
+                # append all calculations to their respective dictionaries
+                wastage_dict[product.name].append(weekly_wastage)
+                loss_dict[product.name].append(weekly_financials[0])
+                missed_profit_dict[product.name].append(weekly_financials[1])
+                sold_profit_dict[product.name].append(weekly_financials[2])
 
-        if (day == 7 and scenario != 3) or (product_inventory.empty is True and scenario == 3):       # Check if end of week for scenario 1 and 2 or if no stock in inventory for scenario 3
-            previous_demand_list.append(item_demand_before_expiry)
-            items_to_restock = product.restock_quantity(scenario, product_inventory, mean(previous_demand_list))            # Call restocking function
+                day = 0
+                weekly_expired_items = 0
+                week += 1
+                item_demand_before_expiry = 0
+                missed = 0
 
-            new_stock = pd.Series(list([product.expiry_days] * items_to_restock))             # Add rows for restocked items
-            product_inventory = product_inventory.append(new_stock, ignore_index=True)
-
-            weekly_defective = product.calc_weekly_defective(items_to_restock)                  # check for defective products in restocked items
-            weekly_wastage = weekly_defective + weekly_expired_items        # Total waste products are expired and defective
-            weekly_financials = product.financials(sold, missed, weekly_wastage)         # Call financials to calculate total loss, total profit and missed orders
-
-            # append all calculations to their respective dictionaries
-            weekly_wastage.append(weekly_wastage)
-            weekly_loss.append(weekly_financials[0])
-            weekly_missed_profit.append(weekly_financials[1])
-            weekly_sold_profit.append(weekly_financials[2])
-
-            day = 0
-            weekly_expired_items = 0
-            week += 1
-            item_demand_before_expiry = 0
-            missed = 0
-
-        day = day + 1
+            day = day + 1
 
     return [weekly_loss, weekly_missed_profit, weekly_sold_profit]
 
