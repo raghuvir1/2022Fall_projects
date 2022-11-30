@@ -33,8 +33,21 @@ def mod_pert_random(low, likely, high, confidence=4, samples=1):
 
 # Intiialialize the product below
 def add_product():
-    # Product()
-    pass
+    print("Add the Product Specifics")
+    product_name = input("Add Name")
+    product_price = float(input("Add Product's Price"))
+    product_cost = float(input("Add Product's Cost"))
+    product_expiry_days = int(input("Add Product's Days before Expiry"))
+    product_storage_capacity = int(input("Add Product's Storage Capacity"))
+    product_demand_low = float(input("Add Product's Daily Demand's Lower Bound Fraction"))
+    product_demand_likely = float(input("Add Product's Daily Demand's Likely Fraction"))
+    product_demand_high = float(input("Add Product's Daily Demand's Upper Bound Fraction"))
+    product_days_to_simulate = int(input("Add the number of days to simulate"))
+
+    return Product(product_name, product_price, product_cost, product_expiry_days,
+                   product_demand_high, product_demand_likely, product_demand_low,
+                   product_storage_capacity, product_days_to_simulate)
+
 
 
 
@@ -54,7 +67,7 @@ class Product:
         self.days_to_simulate = days_to_simulate
 
     def build_inventory(self):
-        inventory_series = pd.Series([self.expiry_days]*self.days_to_simulate
+        inventory_series = pd.Series([self.expiry_days]*self.days_to_simulate)
         return inventory_series
 
     def simulate_demand(self):
@@ -188,5 +201,155 @@ def update_inventory(product_list, scenario):
 
             day = day + 1
 
-    return [weekly_loss, weekly_missed_profit, weekly_sold_profit]
+    return [loss_dict, missed_profit_dict, sold_profit_dict]
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def mc_simulation():
+    """
+    Runs the program multiple times as specified by the user in number of simulations.
+    Also plots graphs to represent the aggregate statistics after all simulations.
+    :return: None
+    """
+    print("Add Products")
+    products = list()
+    products.append(add_product)
+    while True:
+        add_new = int(input("Type 1 to add another product or 0 to proceed"))
+        if add_new == 0:
+            break
+        products.append(add_product)
+
+
+    loss_simulation_dict = {1: {'A': [], 'B': []}, 2: {'A': [], 'B': []}, 3: {'A': [], 'B': []}}
+    missed_profit_simulation_dict = {1: {'A': [], 'B': []}, 2: {'A': [], 'B': []}, 3: {'A': [], 'B': []}}
+    sold_profit_simulation_dict = {1: {'A': [], 'B': []}, 2: {'A': [], 'B': []}, 3: {'A': [], 'B': []}}
+    simulations = None
+    how_to_restock = None
+
+    while True:
+        try:
+            simulations = int(input('Enter number of simulations\n'))           # takes number of simulations as user input
+            if simulations < 2:                                                 # We need at least 2 values for a line plot
+                print('Enter a number greater than 1\n')
+                continue
+        except ValueError:
+            print('Enter a valid simulation\n')
+            continue
+        else:
+            break
+
+    flag = 0
+    while True:
+
+        while True:
+            try:
+                how_to_restock = int(input("1. Press '1' to restock weekly to full capacity\n2. Press '2' to restock weekly based on demand\n3. Press '3' to restock dynamically based on demand\n4. Press '4' for comparison\n5. Press '5' to exit\n"))
+                if how_to_restock not in [1, 2, 3, 4, 5]:           # Available options
+                    raise ValueError
+            except ValueError:
+                print('Enter a valid choice\n')
+                continue
+            else:
+                break
+
+        if how_to_restock == 5:
+            break
+
+        if how_to_restock < 4:
+            flag += 1
+            for j in range(simulations):            # Run whole program for the number of times user asked
+                # i, e, s = initial_stock()           # Initialize stock
+                u1 = update_inventory(products, how_to_restock)          # Update inventory i.e. sell, check expired
+                # updates dictionaries of missed profit, sold items and total loss for each simulation
+                for k in loss_simulation_dict[how_to_restock]:
+                    sold_profit_simulation_dict[how_to_restock][k].append(sum(u1[2][k]))
+
+                    if len(loss_simulation_dict[how_to_restock][k]) == 0:
+                        loss_simulation_dict[how_to_restock][k].append(sum(u1[0][k]))           # loss value for first simulation
+                        missed_profit_simulation_dict[how_to_restock][k].append(sum(u1[1][k]))      # missed profit value for first simulation
+                    else:
+                        loss_cum_avg = cumulative_avg(loss_simulation_dict[how_to_restock][k], sum(u1[0][k]))
+                        loss_simulation_dict[how_to_restock][k].append(loss_cum_avg)        # stores loss statistics for each simulation
+
+                        missed_cum_avg = cumulative_avg(missed_profit_simulation_dict[how_to_restock][k], sum(u1[1][k]))
+                        missed_profit_simulation_dict[how_to_restock][k].append(missed_cum_avg)        # stores missed profit statistics for each simulation
+
+            # plot aggregate statistics for after all simulations
+            for k in loss_simulation_dict[how_to_restock]:
+                i, e, s = initial_stock()
+                lb = str(k) + '(' + str(e[k]) + ' days expiry)'
+                plt.figure(1, figsize=(8, 5))
+                plt.tight_layout(pad=2)
+                st = 'Scenario ' + str(how_to_restock)
+                plt.suptitle(st)
+
+                plt.subplot(121)
+                plt.title('Loss (Monthly)')
+                plt.xlabel('Number of simulations')
+                plt.ylabel('Loss (in $)')
+                plt.plot(loss_simulation_dict[how_to_restock][k], label=lb)
+                plt.legend()
+
+                plt.subplot(122)
+                plt.title('Missed Profits (Monthly)')
+                plt.xlabel('Number of simulations')
+                plt.ylabel('Profit (in $)')
+                plt.plot(missed_profit_simulation_dict[how_to_restock][k], label=lb)
+                plt.legend()
+
+            plt.show()
+
+        if how_to_restock == 4:
+            if flag != 3:
+                print('Please run all simulations first\n')
+            else:
+                for k in loss_simulation_dict:
+                    for j in loss_simulation_dict[k]:
+                        l2 = 'Scenario_' + str(k) + '_Item_' + j
+                        plt.figure(2, figsize=(8, 5))
+                        plt.tight_layout(pad=2)
+                        st = 'Scenario 1    vs    Scenario 2    vs    Scenario 3'
+                        plt.suptitle(st)
+
+                        plt.subplot(121)
+                        plt.title('Loss (Monthly)')
+                        plt.xlabel('Number of simulations')
+                        plt.ylabel('Loss (in $)')
+                        plt.plot(loss_simulation_dict[k][j], label=l2)
+                        plt.legend()
+
+                        plt.subplot(122)
+                        plt.title('Missed Profits (Monthly)')
+                        plt.xlabel('Number of simulations')
+                        plt.ylabel('Profit (in $)')
+                        plt.plot(missed_profit_simulation_dict[k][j], label=l2)
+                        plt.legend()
+
+                plt.figure(3, figsize=(8, 5))
+                plt.title('Average Monthly Profit (Including all items)')
+                plt.ylabel('Profit (in $)')
+                s1_avg = mean(sold_profit_simulation_dict[1]['A']) + mean(sold_profit_simulation_dict[1]['B'])      # average profits for all simulations
+                s2_avg = mean(sold_profit_simulation_dict[2]['A']) + mean(sold_profit_simulation_dict[2]['B'])
+                s3_avg = mean(sold_profit_simulation_dict[3]['A']) + mean(sold_profit_simulation_dict[3]['B'])
+                plt.bar(['Scenario 1', 'Scenario 2', 'Scenario 3'], [s1_avg, s2_avg, s3_avg])
+                plt.show()
