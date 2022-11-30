@@ -33,7 +33,7 @@ def mod_pert_random(low, likely, high, confidence=4, samples=1):
 
 # Intiialialize the product below
 def add_product():
-    print("Add the Product Specifics")
+    # print("Add the Product Specifics")
     product_name = input("Add Name")
     product_price = float(input("Add Product's Price"))
     product_cost = float(input("Add Product's Cost"))
@@ -230,19 +230,28 @@ def mc_simulation():
     Also plots graphs to represent the aggregate statistics after all simulations.
     :return: None
     """
-    print("Add Products")
+    print("Add the first product specifics")
     products = list()
-    products.append(add_product)
+    products.append(add_product())
     while True:
-        add_new = int(input("Type 1 to add another product or 0 to proceed"))
+        add_new = int(input("Type 1 to add another product or 0 to proceed to simulation"))
         if add_new == 0:
             break
+        print("Add the product specifics")
         products.append(add_product)
 
+    loss_simulation_dict = {1: {product.name: [] for product in products},
+                            2: {product.name: [] for product in products},
+                            3: {product.name: [] for product in products}}
 
-    loss_simulation_dict = {1: {'A': [], 'B': []}, 2: {'A': [], 'B': []}, 3: {'A': [], 'B': []}}
-    missed_profit_simulation_dict = {1: {'A': [], 'B': []}, 2: {'A': [], 'B': []}, 3: {'A': [], 'B': []}}
-    sold_profit_simulation_dict = {1: {'A': [], 'B': []}, 2: {'A': [], 'B': []}, 3: {'A': [], 'B': []}}
+    missed_profit_simulation_dict = {1: {product.name: [] for product in products},
+                                     2: {product.name: [] for product in products},
+                                     3: {product.name: [] for product in products}}
+
+    sold_profit_simulation_dict = {1: {product.name: [] for product in products},
+                                   2: {product.name: [] for product in products},
+                                   3: {product.name: [] for product in products}}
+
     simulations = None
     how_to_restock = None
 
@@ -353,3 +362,8 @@ def mc_simulation():
                 s3_avg = mean(sold_profit_simulation_dict[3]['A']) + mean(sold_profit_simulation_dict[3]['B'])
                 plt.bar(['Scenario 1', 'Scenario 2', 'Scenario 3'], [s1_avg, s2_avg, s3_avg])
                 plt.show()
+
+
+
+
+mc_simulation()
