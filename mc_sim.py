@@ -113,6 +113,28 @@ class Product:
 
 
 
+def restock_and_get_metrics(product, inventory, sold, missed, scenario, previous_demand_list, weekly_expired_items, loss_dict, missed_profit_dict, sold_profit_dict):
+    items_to_restock = product.restock_quantity(scenario, inventory, np.mean(previous_demand_list))  # Call restocking function
+
+    new_stock = pd.Series(list([product.expiry_days] * items_to_restock))  # Add rows for restocked items
+    inventory = pd.concat([inventory, new_stock], axis=0, ignore_index=True)
+
+    weekly_defective = product.calc_weekly_defective(items_to_restock)  # check for defective products in restocked items
+    inventory.drop(inventory.index[-weekly_defective:], inplace=True)  # Throw expired items i.e. drop those from the dataframe
+    inventory.reset_index(inplace=True, drop=True)
+
+    weekly_wastage = weekly_defective + weekly_expired_items  # Total waste products are expired and defective
+    weekly_financials = product.financials(sold, missed, weekly_wastage)  # Call financials to calculate total loss, total profit and missed orders
+
+    # append all calculations to their respective dictionaries
+    # wastage_dict[product.name].append(weekly_wastage)
+    loss_dict[product.name].append(weekly_financials[0])
+    missed_profit_dict[product.name].append(weekly_financials[1])
+    sold_profit_dict[product.name].append(weekly_financials[2])
+
+    return inventory, loss_dict, missed_profit_dict, sold_profit_dict
+
+
 
 
 
@@ -182,23 +204,11 @@ def update_inventory(product_list, scenario):
 
             if (day == 7 and scenario != 3) or (product_inventory.empty is True and scenario == 3):       # Check if end of week for scenario 1 and 2 or if no stock in inventory for scenario 3
                 previous_demand_list.append(item_demand_before_expiry)
-                items_to_restock = product.restock_quantity(scenario, product_inventory, np.mean(previous_demand_list))            # Call restocking function
-
-                new_stock = pd.Series(list([product.expiry_days] * items_to_restock))             # Add rows for restocked items
-                product_inventory = product_inventory.append(new_stock, ignore_index=True)
-
-                weekly_defective = product.calc_weekly_defective(items_to_restock)                  # check for defective products in restocked items
-                product_inventory.drop(product_inventory.index[-weekly_defective:], inplace=True)  # Throw expired items i.e. drop those from the dataframe
-                product_inventory.reset_index(inplace=True, drop=True)
-
-                weekly_wastage = weekly_defective + weekly_expired_items        # Total waste products are expired and defective
-                weekly_financials = product.financials(sold, missed, weekly_wastage)         # Call financials to calculate total loss, total profit and missed orders
-
-                # append all calculations to their respective dictionaries
-                wastage_dict[product.name].append(weekly_wastage)
-                loss_dict[product.name].append(weekly_financials[0])
-                missed_profit_dict[product.name].append(weekly_financials[1])
-                sold_profit_dict[product.name].append(weekly_financials[2])
+                product_inventory, loss_dict, missed_profit_dict, sold_profit_dict = restock_and_get_metrics(product,
+                                                                                                             product_inventory, sold, missed,
+                                                                                                             scenario,
+                                                                                                             previous_demand_list, weekly_expired_items,
+                                                                                                             loss_dict, missed_profit_dict, sold_profit_dict)
 
                 day = 0
                 weekly_expired_items = 0
