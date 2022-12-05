@@ -167,7 +167,11 @@ def update_inventory(product_list, scenario):
                 product_inventory.reset_index(inplace=True, drop=True)
 
             else:
-                missed += i                             # add demand to missed orders because of not enough stock to fulfill it
+                sold += len(product_inventory)
+                missed += i - len(product_inventory)                             # add demand to missed orders because of not enough stock to fulfill it
+
+                product_inventory.drop(product_inventory.index[:len(product_inventory)], axis=0, inplace=True)  # sold items hence drop them from inventory dataframe
+                product_inventory.reset_index(inplace=True, drop=True)
 
             product_inventory = product_inventory - 1  # end of day hence reduce expiry days remaining by 1
 
