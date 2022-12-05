@@ -188,6 +188,9 @@ def update_inventory(product_list, scenario):
                 product_inventory = product_inventory.append(new_stock, ignore_index=True)
 
                 weekly_defective = product.calc_weekly_defective(items_to_restock)                  # check for defective products in restocked items
+                product_inventory.drop(product_inventory.index[-weekly_defective:], inplace=True)  # Throw expired items i.e. drop those from the dataframe
+                product_inventory.reset_index(inplace=True, drop=True)
+
                 weekly_wastage = weekly_defective + weekly_expired_items        # Total waste products are expired and defective
                 weekly_financials = product.financials(sold, missed, weekly_wastage)         # Call financials to calculate total loss, total profit and missed orders
 
@@ -224,8 +227,21 @@ def update_inventory(product_list, scenario):
 
 
 
+def load_products(filepath:str = None) -> list:
+    """
 
+    :param filepath:
+    :return:
+    """
+    products_df = pd.read_csv(filepath, index_col=None)
+    products_list = list()
+    for i, row in products_df.iterrows():
+        temp = Product(row['name'], row['price'], row['cost'], row['expiry_days'],
+                       row['demand_upper_bound_frac'], row['demand_likely_frac'], row['demand_lower_bound_frac'],
+                       row['storage_capacity'], row['days_to_simulate=28'])
+        products_list.append(temp)
 
+    return products_list
 
 
 def mc_simulation():
@@ -234,15 +250,34 @@ def mc_simulation():
     Also plots graphs to represent the aggregate statistics after all simulations.
     :return: None
     """
-    print("Add the first product specifics")
-    products = list()
-    products.append(add_product())
     while True:
-        add_new = int(input("Type 1 to add another product or 0 to proceed to simulation"))
-        if add_new == 0:
+        try:
+            input_products = int(input("Type 1 to Add Products or 0 to Proceed with default products list"))
+        except ValueError:
+            print("Enter a valid option")
+            continue
+        else:
             break
-        print("Add the product specifics")
-        products.append(add_product)
+    if input_products == 0:
+        products = load_products('products.csv')
+    else:
+        print("Add the first product specifics")
+        products = list()
+        products.append(add_product())
+        while True:
+            while True:
+                try:
+                    add_new = int(input("Type 1 to add another product or 0 to proceed to simulation"))
+                except ValueError:
+                    print("Enter a valid option")
+                    continue
+                else:
+                    break
+
+            if add_new == 0:
+                break
+            print("Add the product specifics")
+            products.append(add_product)
 
     loss_simulation_dict = {1: {product.name: [] for product in products},
                             2: {product.name: [] for product in products},
