@@ -384,8 +384,8 @@ def mc_simulation():
                 print('Please run all simulations first\n')
             else:
                 for scenario in loss_simulation_dict:
-                    for product in loss_simulation_dict[scenario]:
-                        l2 = 'Scenario_' + str(scenario) + '_Item_' + j
+                    for product in products:
+                        l2 = 'Scenario_' + str(scenario) + '_Item_' + product.name
                         plt.figure(2, figsize=(8, 5))
                         plt.tight_layout(pad=2)
                         st = 'Scenario 1    vs    Scenario 2    vs    Scenario 3'
