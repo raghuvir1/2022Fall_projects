@@ -354,9 +354,10 @@ def mc_simulation():
                         missed_profit_simulation_dict[how_to_restock][k].append(missed_cum_avg)        # stores missed profit statistics for each simulation
 
             # plot aggregate statistics for after all simulations
-            for k in loss_simulation_dict[how_to_restock]:
+            # for k in loss_simulation_dict[how_to_restock]:
+            for product in products:
                 #i, e, s = initial_stock()
-                lb = str(k) + '(' + str(e[k]) + ' days expiry)'
+                lb = str(product.name) + '(' + str(product.expiry_days) + ' days expiry)'
                 plt.figure(1, figsize=(8, 5))
                 plt.tight_layout(pad=2)
                 st = 'Scenario ' + str(how_to_restock)
@@ -366,14 +367,14 @@ def mc_simulation():
                 plt.title('Loss (Monthly)')
                 plt.xlabel('Number of simulations')
                 plt.ylabel('Loss (in $)')
-                plt.plot(loss_simulation_dict[how_to_restock][k], label=lb)
+                plt.plot(loss_simulation_dict[how_to_restock][product.name], label=lb)
                 plt.legend()
 
                 plt.subplot(122)
                 plt.title('Missed Profits (Monthly)')
                 plt.xlabel('Number of simulations')
                 plt.ylabel('Profit (in $)')
-                plt.plot(missed_profit_simulation_dict[how_to_restock][k], label=lb)
+                plt.plot(missed_profit_simulation_dict[how_to_restock][product.name], label=lb)
                 plt.legend()
 
             plt.show()
@@ -382,9 +383,9 @@ def mc_simulation():
             if flag != 3:
                 print('Please run all simulations first\n')
             else:
-                for k in loss_simulation_dict:
-                    for j in loss_simulation_dict[k]:
-                        l2 = 'Scenario_' + str(k) + '_Item_' + j
+                for scenario in loss_simulation_dict:
+                    for product in loss_simulation_dict[scenario]:
+                        l2 = 'Scenario_' + str(scenario) + '_Item_' + j
                         plt.figure(2, figsize=(8, 5))
                         plt.tight_layout(pad=2)
                         st = 'Scenario 1    vs    Scenario 2    vs    Scenario 3'
@@ -394,14 +395,14 @@ def mc_simulation():
                         plt.title('Loss (Monthly)')
                         plt.xlabel('Number of simulations')
                         plt.ylabel('Loss (in $)')
-                        plt.plot(loss_simulation_dict[k][j], label=l2)
+                        plt.plot(loss_simulation_dict[scenario][product.name], label=l2)
                         plt.legend()
 
                         plt.subplot(122)
                         plt.title('Missed Profits (Monthly)')
                         plt.xlabel('Number of simulations')
                         plt.ylabel('Profit (in $)')
-                        plt.plot(missed_profit_simulation_dict[k][j], label=l2)
+                        plt.plot(missed_profit_simulation_dict[scenario][product.name], label=l2)
                         plt.legend()
 
                 plt.figure(3, figsize=(8, 5))
