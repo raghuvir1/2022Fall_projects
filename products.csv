@@ -1,4 +1,3 @@
 ﻿name,price,cost,expiry_days,demand_upper_bound_frac,demand_likely_frac,demand_lower_bound_frac,storage_capacity,days_to_simulate
-A,5.99,1.5,14,0.060714286,0.071428571,0.082142857,160,56
-B,6.99,2.2,8,0.10625,0.125,0.14375,240,56
-C,7.99,3.5,10,0.085,0.1,0.115,100,56
+A,24,20,3,0.2,0.18,0.15,100,28
+B,18,15,5,0.15,0.12,0.1,100,28
