@@ -54,9 +54,24 @@ def cumulative_avg(l1, new):
 
 
 class Product:
+    """
+    A class, each instance of which represents a single product type.
+    """
     def __init__(self, name, price, cost, expiry_days,
                  demand_upper_bound_frac, demand_likely_frac, demand_lower_bound_frac,
-                 storage_capacity, days_to_simulate=28):  #, storage_cost_per_day, restock_option):
+                 storage_capacity, days_to_simulate=28):
+        """
+        Initial a product class instance by specifying the attributes
+        :param name: product name
+        :param price: product price
+        :param cost: product cost
+        :param expiry_days: product expiry days
+        :param demand_upper_bound_frac: product's demand's upper bound as a fraction of storage
+        :param demand_likely_frac: product's demand's likely value as a fraction of storage
+        :param demand_lower_bound_frac: product's demand's lower bound as a fraction of storage
+        :param storage_capacity: product's storage capacity
+        :param days_to_simulate: days to simulate the inventory process for
+        """
         # input parameters
         self.name = name
         self.price = price
@@ -69,11 +84,20 @@ class Product:
         self.days_to_simulate = days_to_simulate
 
     def build_inventory(self):
+        """
+        Using the expiry days and days to simulate, this method returns the initial full inventory as a pandas series
+        of length same as the storage capacity and values as the days of expiry.
+        :return: product inventory series
+        """
         inventory_series = pd.Series([self.expiry_days]*self.days_to_simulate)
         return inventory_series
 
     def simulate_demand(self):
-        # mean_demand_bound = round( ((self.demand_upper_bound + self.demand_lower_bound)/2),2)
+        """
+        This method simulates the demand for the product based on the PERT distribution and returns a list of demand
+        values.
+        :return: product demand list
+        """
         sim_daily_demand = (mod_pert_random(self.demand_lower_bound * self.storage_capacity,
                                             self.demand_likely * self.storage_capacity,
                                             self.demand_upper_bound * self.storage_capacity,
@@ -83,11 +107,23 @@ class Product:
         return sim_daily_demand
 
     def calc_weekly_defective(self, n_items):
+        """
+        This method returns the number of defective items in re-stocking.
+        :param n_items: total items in the latest stock
+        :return: Number of defective items
+        """
         percent_defective = np.random.choice(list(range(5, 11)))  # Selects a random % value between 5 to 10
         defective_items = (n_items * percent_defective) // 100  # Number of defective items during restock (5-10%)
         return defective_items
 
     def financials(self, sold, missed, weekly_wastage):
+        """
+        This method takes in the item sales numbers and calculates the profit and loss statistics.
+        :param sold: total number of sold items
+        :param missed: total demand missed
+        :param weekly_wastage: total number of items wasted due to expiring or defects
+        :return: list of loss and profit statistics
+        """
         # Calculates total loss, missed profit and total profit for both items
 
         total_loss = (self.cost * weekly_wastage)
@@ -97,6 +133,13 @@ class Product:
         return [total_loss, missed_profit, sold_profit]
 
     def restock_quantity(self, scenario, inventory_series, weekly_demand):
+        """
+        This method takes in the simulation details calculates the restocking quantity for the product
+        :param scenario: simulation scenario
+        :param inventory_series: product inventory
+        :param weekly_demand: weekly tracked demand list
+        :return: number of items to restock the inventory with
+        """
         n_items = len(inventory_series)
         if scenario == 1:  # Check is scenario 1
             items_to_restock = self.storage_capacity - n_items  # Restock upto its maximum storage
@@ -137,13 +180,6 @@ def restock_and_get_metrics(product, inventory, sold, missed, scenario, previous
     return inventory, loss_dict, missed_profit_dict, sold_profit_dict
 
 
-
-
-
-
-
-
-
 def update_inventory(product_list, scenario):
     """
     Updates the inventory on the basis of demand.
@@ -151,24 +187,15 @@ def update_inventory(product_list, scenario):
     :param product_list: Dataframe of inventory with all items
     :param scenario: type of scenario (1 or 2)
     :return: list of Dictionaries for loss and missed profit. Each dictionary again contains a list for each item.
-    >>> df1 = pd.DataFrame({'A':[3]*10,'B':[2]*10})
-    >>> expiry_days = {'A':3, 'B':8}
-    >>> update_inventory(df1, expiry_days, 10, 1) # doctest: +ELLIPSIS
-    [{'A': ...
-    >>> update_inventory(df1,expiry_days,10,2) # doctest: +ELLIPSIS
-    [{'A': ...
+    # doctest: +ELLIPSIS
     """
-
-
     wastage_dict = {product.name: [] for product in product_list}
     loss_dict = {product.name: [] for product in product_list}
     missed_profit_dict = {product.name: [] for product in product_list}
     sold_profit_dict = {product.name: [] for product in product_list}
     previous_demand_list = []
 
-    # for df, k in zip(df_list, demand):  # iterating over dataframe and demand of an item
     for product in product_list:
-
         demand = product.simulate_demand()
         product_inventory = product.build_inventory()
 
@@ -180,27 +207,21 @@ def update_inventory(product_list, scenario):
         sold = 0
 
         for i in demand:  # demand for each day
-
             if day <= product.expiry_days:
                 item_demand_before_expiry += i          # add items' demand before it gets expired
 
             if i <= len(product_inventory):                        # check if demand is less than the available stock
                 sold += i                               # add sold items
-
                 product_inventory.drop(product_inventory.index[:i], axis=0, inplace=True)  # sold items hence drop them from inventory dataframe
                 product_inventory.reset_index(inplace=True, drop=True)
-
             else:
                 sold += len(product_inventory)
                 missed += i - len(product_inventory)                             # add demand to missed orders because of not enough stock to fulfill it
-
                 product_inventory.drop(product_inventory.index[:len(product_inventory)], axis=0, inplace=True)  # sold items hence drop them from inventory dataframe
                 product_inventory.reset_index(inplace=True, drop=True)
 
             product_inventory = product_inventory - 1  # end of day hence reduce expiry days remaining by 1
-
             weekly_expired_items += product_inventory[product_inventory < 0].count()  # check expired items and store them
-
             product_inventory.drop(product_inventory[product_inventory < 0].index, inplace=True)         # Throw expired items i.e. drop those from the dataframe
             product_inventory.reset_index(inplace=True, drop=True)
 
@@ -243,9 +264,9 @@ def add_product():
 
 def load_products(filepath:str = None) -> list:
     """
-
-    :param filepath:
-    :return:
+    This function loads the products from a csv file with the products' details
+    :param filepath: system path of the file
+    :return: list of product objects
     """
     products_df = pd.read_csv(filepath, index_col=None)
     products_list = list()
@@ -259,6 +280,7 @@ def load_products(filepath:str = None) -> list:
 
 
 def get_simulation_count():
+    """This function helps take and validate simulation count from the user"""
     while True:
         try:
             simulations = int(input('Enter number of simulations\n'))           # takes number of simulations as user input
@@ -274,6 +296,7 @@ def get_simulation_count():
 
 
 def get_scenario_number():
+    """This function helps take and validate scenario number from the user"""
     while True:
         try:
             scenario = int(input("1. Press '1' to restock weekly to full capacity\n2. Press '2' to restock weekly based on demand\n3. Press '3' to restock dynamically based on demand\n4. Press '4' for comparison\n5. Press '5' to exit\n"))
@@ -287,6 +310,14 @@ def get_scenario_number():
     return scenario
 
 def plot_financial_stats(product_list, loss_dict, missed_profit_dict, scenario):
+    """
+    This function plots the profit-loss stats of the products for a given scenario
+    :param product_list: list of products in simulation
+    :param loss_dict: dictionary to track losses through different scenarios, product and simulation
+    :param missed_profit_dict: dictionary to track missed profits through different scenarios, product and simulation
+    :param scenario: the simulation scenario number
+    :return:
+    """
     for product in product_list:
         # i, e, s = initial_stock()
         lb = str(product.name) + '(' + str(product.expiry_days) + ' days expiry)'
@@ -313,6 +344,14 @@ def plot_financial_stats(product_list, loss_dict, missed_profit_dict, scenario):
 
 
 def plot_comparison_plot(product_list, loss_dict, missed_profit_dict, sold_profit_dict):
+    """
+    This function plots all the products' profit-loss stats comparison across the different scenarios
+    :param product_list: list of products in simulation
+    :param loss_dict: dictionary to track losses through different scenarios, product and simulation
+    :param missed_profit_dict: dictionary to track missed profits through different scenarios, product and simulation
+    :param sold_profit_dict: dictionary to track achieved profits through different scenarios, product and simulation
+    :return:
+    """
     for scenario in loss_dict:
         for product in product_list:
             l2 = 'Scenario_' + str(scenario) + '_Item_' + product.name
