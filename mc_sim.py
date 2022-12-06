@@ -1,5 +1,8 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+from statistics import mean
+
 
 
 def mod_pert_random(low, likely, high, confidence=4, samples=1):
@@ -48,6 +51,20 @@ def add_product():
                    product_demand_high, product_demand_likely, product_demand_low,
                    product_storage_capacity, product_days_to_simulate)
 
+def cumulative_avg(l1, new):
+    """
+    Calculates cumulative average for the given list and the new element
+    :param l1: List of elements
+    :param new: new element
+    :return: cumulative average of the list elements and the new element
+    >>> list1 = [1,2,3,4]
+    >>> cumulative_avg(list1,5)
+    3.0
+    """
+    temp = sum(l1)
+    length = len(l1)
+    cum_avg = (temp + new) / (length + 1)           # calculates cumulative average of all elements in list and the new element
+    return cum_avg
 
 
 
@@ -221,22 +238,6 @@ def update_inventory(product_list, scenario):
     return [loss_dict, missed_profit_dict, sold_profit_dict]
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def load_products(filepath:str = None) -> list:
     """
 
@@ -248,7 +249,7 @@ def load_products(filepath:str = None) -> list:
     for i, row in products_df.iterrows():
         temp = Product(row['name'], row['price'], row['cost'], row['expiry_days'],
                        row['demand_upper_bound_frac'], row['demand_likely_frac'], row['demand_lower_bound_frac'],
-                       row['storage_capacity'], row['days_to_simulate=28'])
+                       row['storage_capacity'], row['days_to_simulate'])
         products_list.append(temp)
 
     return products_list
@@ -354,7 +355,7 @@ def mc_simulation():
 
             # plot aggregate statistics for after all simulations
             for k in loss_simulation_dict[how_to_restock]:
-                i, e, s = initial_stock()
+                #i, e, s = initial_stock()
                 lb = str(k) + '(' + str(e[k]) + ' days expiry)'
                 plt.figure(1, figsize=(8, 5))
                 plt.tight_layout(pad=2)
