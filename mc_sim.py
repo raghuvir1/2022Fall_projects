@@ -255,7 +255,7 @@ def update_inventory(product_list, scenario):
                                                                                                              missed_profit_dict,
                                                                                                              sold_profit_dict)
 
-            elif (day == 7 and scenario != 3) or (product_inventory.empty is True and scenario == 3):       # Check if end of week for scenario 1 and 2 or if no stock in inventory for scenario 3
+            elif (day == 7 and (scenario == 1 or scenario ==2)) or (product_inventory.empty is True and scenario == 3):       # Check if end of week for scenario 1 and 2 or if no stock in inventory for scenario 3
                 previous_demand_list.append(item_demand_before_expiry)
                 product_inventory, loss_dict, missed_profit_dict, sold_profit_dict = restock_and_get_metrics(product,
                                                                                                              product_inventory, sold, missed,
