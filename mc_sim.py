@@ -132,7 +132,7 @@ class Product:
 
         return [total_loss, missed_profit, sold_profit]
 
-    def restock_quantity(self, scenario, inventory_series, weekly_demand):
+    def restock_quantity(self, scenario, inventory_series, weekly_demand, weekly_expired_items):
         """
         This method takes in the simulation details calculates the restocking quantity for the product
         :param scenario: simulation scenario
@@ -145,12 +145,19 @@ class Product:
             items_to_restock = self.storage_capacity - n_items  # Restock upto its maximum storage
             return items_to_restock
 
-        if scenario != 1:  # Check if scenario 2 or 3
+        if scenario == 2 or scenario == 3:  # Check if scenario 2 or 3
             items_to_restock = int(weekly_demand)  # Restock number of items equal to previous cumulative demand
 
             if items_to_restock > (self.storage_capacity - n_items):  # if previous cumulative demand greater than the vacant space
                 items_to_restock = self.storage_capacity - n_items  # then items to restock equal to vacant space i.e. upto maximum storage
+                return items_to_restock
 
+        if scenario == 4: #restock when inventory is at 10% or less
+            items_to_restock = self.storage_capacity - (n_items*0.1)  # Restock upto its maximum storage
+            return items_to_restock
+
+        if scenario == 5:  # restock when inventory expires
+            items_to_restock = weekly_expired_items  # Restock upto its maximum storage
             return items_to_restock
 
 
@@ -159,7 +166,7 @@ class Product:
 
 
 def restock_and_get_metrics(product, inventory, sold, missed, scenario, previous_demand_list, weekly_expired_items, loss_dict, missed_profit_dict, sold_profit_dict):
-    items_to_restock = product.restock_quantity(scenario, inventory, np.mean(previous_demand_list))  # Call restocking function
+    items_to_restock = product.restock_quantity(scenario, inventory, np.mean(previous_demand_list), weekly_expired_items)  # Call restocking function
 
     new_stock = pd.Series(list([product.expiry_days] * items_to_restock))  # Add rows for restocked items
     inventory = pd.concat([inventory, new_stock], axis=0, ignore_index=True)
@@ -225,7 +232,30 @@ def update_inventory(product_list, scenario):
             product_inventory.drop(product_inventory[product_inventory < 0].index, inplace=True)         # Throw expired items i.e. drop those from the dataframe
             product_inventory.reset_index(inplace=True, drop=True)
 
-            if (day == 7 and scenario != 3) or (product_inventory.empty is True and scenario == 3):       # Check if end of week for scenario 1 and 2 or if no stock in inventory for scenario 3
+            if scenario == 4 and len(product_inventory) <= product.storage_capacity*0.1: #restock when inventory reaches 10%
+                product_inventory, loss_dict, missed_profit_dict, sold_profit_dict = restock_and_get_metrics(product,
+                                                                                                             product_inventory,
+                                                                                                             sold,
+                                                                                                             missed,
+                                                                                                             scenario,
+                                                                                                             previous_demand_list,
+                                                                                                             weekly_expired_items,
+                                                                                                             loss_dict,
+                                                                                                             missed_profit_dict,
+                                                                                                             sold_profit_dict)
+            elif (scenario == 5) and day == product.expiry_days: #restock when inventory expires
+                product_inventory, loss_dict, missed_profit_dict, sold_profit_dict = restock_and_get_metrics(product,
+                                                                                                             product_inventory,
+                                                                                                             sold,
+                                                                                                             missed,
+                                                                                                             scenario,
+                                                                                                             previous_demand_list,
+                                                                                                             weekly_expired_items,
+                                                                                                             loss_dict,
+                                                                                                             missed_profit_dict,
+                                                                                                             sold_profit_dict)
+
+            elif (day == 7 and scenario != 3) or (product_inventory.empty is True and scenario == 3):       # Check if end of week for scenario 1 and 2 or if no stock in inventory for scenario 3
                 previous_demand_list.append(item_demand_before_expiry)
                 product_inventory, loss_dict, missed_profit_dict, sold_profit_dict = restock_and_get_metrics(product,
                                                                                                              product_inventory, sold, missed,
@@ -299,8 +329,8 @@ def get_scenario_number():
     """This function helps take and validate scenario number from the user"""
     while True:
         try:
-            scenario = int(input("1. Press '1' to restock weekly to full capacity\n2. Press '2' to restock weekly based on demand\n3. Press '3' to restock dynamically based on demand\n4. Press '4' for comparison\n5. Press '5' to exit\n"))
-            if scenario not in [1, 2, 3, 4, 5]:  # Available options
+            scenario = int(input("1. Press '1' to restock weekly to full capacity\n2. Press '2' to restock weekly based on demand\n3. Press '3' to restock dynamically based on demand\n4. Press '4' to restock at 10% inventory\n5. Press '5' to restock after product expires\n6. Press '6' for comparison\n7. Press '7' to exit\n"))
+            if scenario not in [1, 2, 3, 4, 5, 6, 7]:  # Available options
                 raise ValueError
         except ValueError:
             print('Enter a valid choice\n')
@@ -357,7 +387,7 @@ def plot_comparison_plot(product_list, loss_dict, missed_profit_dict, sold_profi
             l2 = 'Scenario_' + str(scenario) + '_Item_' + product.name
             plt.figure(2, figsize=(8, 5))
             plt.tight_layout(pad=2)
-            st = 'Scenario 1    vs    Scenario 2    vs    Scenario 3'
+            st = 'Scenario 1    vs    Scenario 2    vs    Scenario 3    vs    Scenario 4    vs Scenario 5 '
             plt.suptitle(st)
 
             plt.subplot(121)
@@ -380,7 +410,9 @@ def plot_comparison_plot(product_list, loss_dict, missed_profit_dict, sold_profi
     s1_avg = sum([mean(sold_profit_dict[1][k]) for k in sold_profit_dict[1]])  # average profits for all simulations
     s2_avg = sum([mean(sold_profit_dict[2][k]) for k in sold_profit_dict[2]])
     s3_avg = sum([mean(sold_profit_dict[3][k]) for k in sold_profit_dict[3]])
-    plt.bar(['Scenario 1', 'Scenario 2', 'Scenario 3'], [s1_avg, s2_avg, s3_avg])
+    s4_avg = sum([mean(sold_profit_dict[4][k]) for k in sold_profit_dict[4]])
+    s5_avg = sum([mean(sold_profit_dict[5][k]) for k in sold_profit_dict[5]])
+    plt.bar(['Scenario 1', 'Scenario 2', 'Scenario 3', 'Scenario 4', 'Scenario 5'], [s1_avg, s2_avg, s3_avg, s4_avg, s5_avg])
     plt.show()
 
 
@@ -392,7 +424,7 @@ def mc_simulation():
     """
     while True:
         try:
-            input_products = int(input("Type 1 to Add Products or 0 to Proceed with default products list"))
+            input_products = int(input("Type 1 to Add Products or 0 to Proceed with default products list:  "))
         except ValueError:
             print("Enter a valid option")
             continue
@@ -407,7 +439,7 @@ def mc_simulation():
         while True:
             while True:
                 try:
-                    add_new = int(input("Type 1 to add another product or 0 to proceed to simulation"))
+                    add_new = int(input("Type 1 to add another product or 0 to proceed to simulation:   "))
                 except ValueError:
                     print("Enter a valid option")
                     continue
@@ -421,15 +453,21 @@ def mc_simulation():
 
     loss_simulation_dict = {1: {product.name: [] for product in products},
                             2: {product.name: [] for product in products},
-                            3: {product.name: [] for product in products}}
+                            3: {product.name: [] for product in products},
+                            4: {product.name: [] for product in products},
+                            5: {product.name: [] for product in products}}
 
     missed_profit_simulation_dict = {1: {product.name: [] for product in products},
                                      2: {product.name: [] for product in products},
-                                     3: {product.name: [] for product in products}}
+                                     3: {product.name: [] for product in products},
+                                     4: {product.name: [] for product in products},
+                                     5: {product.name: [] for product in products}}
 
     sold_profit_simulation_dict = {1: {product.name: [] for product in products},
                                    2: {product.name: [] for product in products},
-                                   3: {product.name: [] for product in products}}
+                                   3: {product.name: [] for product in products},
+                                   4: {product.name: [] for product in products},
+                                   5: {product.name: [] for product in products}}
 
     simulations = None
     how_to_restock = None
@@ -438,10 +476,10 @@ def mc_simulation():
     while True:
         how_to_restock = get_scenario_number()
 
-        if how_to_restock == 5:
+        if how_to_restock == 7: # exit scenario
             break
 
-        if how_to_restock < 4:
+        if how_to_restock < 6:
             flag += 1
             for j in range(simulations):            # Run whole program for the number of times user asked
                 u1 = update_inventory(products, how_to_restock)          # Update inventory i.e. sell, check expired
@@ -462,8 +500,8 @@ def mc_simulation():
             # plot aggregate statistics for after all simulations
             plot_financial_stats(products, loss_simulation_dict, missed_profit_simulation_dict, how_to_restock)
 
-        if how_to_restock == 4:
-            if flag != 3:
+        if how_to_restock == 6: # compare
+            if flag != 5:
                 print('Please run all simulations first\n')
             else:
                 plot_comparison_plot(products,
