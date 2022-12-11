@@ -374,7 +374,7 @@ def plot_financial_stats(product_list, loss_dict, missed_profit_dict, scenario):
     :return:
     >>> prod = Product("A", 24, 20, 3, 0.2, 0.18, 0.15, 100, 28)
     >>> plot_financial_stats([prod], {1:{"A":[2,3,4,5]}}, {1:{"A":[1,2,3,4]}}, 1)
-    None
+
     """
     for product in product_list:
         # i, e, s = initial_stock()
@@ -389,14 +389,14 @@ def plot_financial_stats(product_list, loss_dict, missed_profit_dict, scenario):
         plt.xlabel('Number of simulations')
         plt.ylabel('Loss (in $)')
         plt.plot(loss_dict[scenario][product.name], label=lb)
-        plt.legend()
+        plt.legend(loc='upper left', borderaxespad=0, bbox_to_anchor=(1, 1))
 
         plt.subplot(122)
         plt.title('Missed Profits (Monthly)')
         plt.xlabel('Number of simulations')
         plt.ylabel('Profit (in $)')
         plt.plot(missed_profit_dict[scenario][product.name], label=lb)
-        plt.legend()
+        plt.legend(loc='upper left', borderaxespad=0, bbox_to_anchor=(1, 1))
     plt.show()
     return None
 
@@ -423,14 +423,14 @@ def plot_comparison_plot(product_list, loss_dict, missed_profit_dict, sold_profi
             plt.xlabel('Number of simulations')
             plt.ylabel('Loss (in $)')
             plt.plot(loss_dict[scenario][product.name], label=l2)
-            plt.legend()
+            plt.legend(loc='upper left', borderaxespad=0, bbox_to_anchor=(1, 1))
 
             plt.subplot(122)
             plt.title('Missed Profits (Monthly)')
             plt.xlabel('Number of simulations')
             plt.ylabel('Profit (in $)')
             plt.plot(missed_profit_dict[scenario][product.name], label=l2)
-            plt.legend()
+            plt.legend(loc='upper left', borderaxespad=0, bbox_to_anchor=(1, 1))
 
     plt.figure(3, figsize=(8, 5))
     plt.title('Average Monthly Profit (Including all items)')
@@ -538,11 +538,9 @@ def mc_simulation():
 
     return None
 
+mc_simulation()
 
-
-# prod = Product("A", 24, 20, 3, 0.2, 0.18, 0.15, 100, 28)
-# print(prod)
-
-
-# if __name__ == '__main__':
-#     mc_simulation()
+if __name__ == '__main__':
+    # prod = Product("A", 24, 20, 3, 0.2, 0.18, 0.15, 100, 28)
+    # print(prod)
+    mc_simulation()
