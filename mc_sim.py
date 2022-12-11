@@ -538,7 +538,6 @@ def mc_simulation():
 
     return None
 
-mc_simulation()
 
 if __name__ == '__main__':
     # prod = Product("A", 24, 20, 3, 0.2, 0.18, 0.15, 100, 28)
