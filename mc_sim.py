@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from statistics import mean
 
 
-
 def mod_pert_random(low, likely, high, confidence=4, samples=1):
     """Produce random numbers according to the 'Modified PERT' distribution.
     :param low: The lowest value expected as possible.
@@ -51,7 +50,6 @@ def cumulative_avg(l1, new):
     length = len(l1)
     cum_avg = (temp + new) / (length + 1)           # calculates cumulative average of all elements in list and the new element
     return cum_avg
-
 
 
 class Product:
@@ -156,6 +154,17 @@ class Product:
         :param inventory_series: product inventory
         :param weekly_demand: weekly tracked demand list
         :return: number of items to restock the inventory with
+        >>> prod = Product("A", 24, 20, 3, 0.2, 0.18, 0.15, 100, 5)
+        >>> prod.restock_quantity(1, pd.Series([2,2,2,2]), 30)
+        96
+        >>> prod.restock_quantity(2, pd.Series([2,2,2,2]), 30)
+        30
+        >>> prod.restock_quantity(3, pd.Series([2]*80), 30)
+        20
+        >>> prod.restock_quantity(4, pd.Series([2]*80), 30)
+        20
+        >>> prod.restock_quantity(5, pd.Series([2]*8), 30)
+        22
         """
         n_items = len(inventory_series)
         if scenario == 1:  # Check is scenario 1
@@ -174,7 +183,7 @@ class Product:
             return items_to_restock
 
         if scenario == 5:  # restock when inventory expires
-            items_to_restock = int(weekly_demand) - n_items  # Restock upto its maximum storage
+            items_to_restock = int(weekly_demand) - n_items  # Restock upto cumulative demand
             return items_to_restock
 
         return items_to_restock
@@ -209,7 +218,10 @@ def update_inventory(product_list, scenario):
     :param product_list: Dataframe of inventory with all items
     :param scenario: type of scenario (1 or 2)
     :return: list of Dictionaries for loss and missed profit. Each dictionary again contains a list for each item.
-    # doctest: +ELLIPSIS
+    >>> prod = Product("A", 24, 20, 3, 0.2, 0.18, 0.15, 100, 28)
+    >>> out = update_inventory([prod], 1)
+    >>> len(out)
+    3
     """
     wastage_dict = {product.name: [] for product in product_list}
     loss_dict = {product.name: [] for product in product_list}
@@ -351,6 +363,7 @@ def get_scenario_number():
             break
     return scenario
 
+
 def plot_financial_stats(product_list, loss_dict, missed_profit_dict, scenario):
     """
     This function plots the profit-loss stats of the products for a given scenario
@@ -359,6 +372,9 @@ def plot_financial_stats(product_list, loss_dict, missed_profit_dict, scenario):
     :param missed_profit_dict: dictionary to track missed profits through different scenarios, product and simulation
     :param scenario: the simulation scenario number
     :return:
+    >>> prod = Product("A", 24, 20, 3, 0.2, 0.18, 0.15, 100, 28)
+    >>> plot_financial_stats([prod], {1:{"A":[2,3,4,5]}}, {1:{"A":[1,2,3,4]}}, 1)
+    None
     """
     for product in product_list:
         # i, e, s = initial_stock()
@@ -426,6 +442,7 @@ def plot_comparison_plot(product_list, loss_dict, missed_profit_dict, sold_profi
     s5_avg = sum([mean(sold_profit_dict[5][k]) for k in sold_profit_dict[5]])
     plt.bar(['Scenario 1', 'Scenario 2', 'Scenario 3', 'Scenario 4', 'Scenario 5'], [s1_avg, s2_avg, s3_avg, s4_avg, s5_avg])
     plt.show()
+    return None
 
 
 def mc_simulation():
@@ -522,7 +539,10 @@ def mc_simulation():
     return None
 
 
-if __name__ == '__main__':
-    # mc_simulation()
-    prod = Product("A", 24, 20, 3, 0.2, 0.18, 0.15, 100, 28)
-    print(prod)
+
+# prod = Product("A", 24, 20, 3, 0.2, 0.18, 0.15, 100, 28)
+# print(prod)
+
+
+# if __name__ == '__main__':
+#     mc_simulation()
