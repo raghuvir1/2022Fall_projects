@@ -14,17 +14,15 @@ In this project, we improve and enhance the code and implementation of the inven
 
 
 ## Original Scenarios
-| Syntax | Description |
-| ----------- | ----------- |
 | Scenario | Restocking Upto | Restocking Interval
+| ----------- | ----------- |
 | 1 | Full | Weekly
 | 2 | Cumulative Previous Demand | Weekly
 | 3 | Cumulative Previous Demand | On Expiry
 
 ## New Scenarios
-| Syntax | Description |
-| ----------- | ----------- |
 | Scenario | Restocking Upto | Restocking Interval
+| ----------- | ----------- |
 | 4 | Full | When stock < 10% of Maximum Capacity
 | 5 | Cumulative Previous Demand | At Product Expiry Days
 
