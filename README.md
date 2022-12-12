@@ -1,9 +1,8 @@
 # Project Enhancement: Perishable products Inventory Management using MC Simulation
 ##### [Original Project]("https://github.com/LalitaTakle/2021Fall_finals")
 
-***This is a type 1 project wherein we try to improve and enhance the code and implementation of the inventory management simulation carried out in the earlier semester.***
 Goods such as fresh food (unprocessed dairy products), meat, some pharmaceutical products etc. require special attention in the inventory management models because of their perishability.
-In case of such products restocking strategy becomes critical in managing stock, avoiding wastage and maximize profits.
+In case of such products restocking strategy becomes critical in managing stock, avoiding wastage and maximizing profits.
 
 ### Objective
 
@@ -41,7 +40,7 @@ Note: While the assumptions stay the same, these hard coded assumptions have now
 
 ### Code Improvements
 1. Removed the hard coded product metrics and created a product class that contains all the specific attributes of a product and 
-methods related to a product that are specific to these.
+methods related to a product.
 2. Instead of hard coding the products, made the system more useful by giving the user the option to add products or load the same from a csv file.
 3. Updated the plots being made to increase their visibility.
 4. Segmented the code further down for ease of understanding and testing.
@@ -53,3 +52,6 @@ available stock, the entire stock is sold off.
 Now these are being dropped.
 
 ![A comparison of the 5 scenarios run in this updated simulation can be seen before.](comparison_plot.png)
+
+## Result
+We were able to regenerate the results for the hypotheses tested originally and test out two more hypotheses. Furthermore, we made the code more dynamic, scalable and reliable.
