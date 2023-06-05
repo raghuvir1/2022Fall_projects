@@ -1,15 +1,16 @@
-# Project Enhancement: Perishable products Inventory Management using MC Simulation
-##### [Original Project]("https://github.com/LalitaTakle/2021Fall_finals")
+# Optimizing Inventory Management Strategies For Perishable Products Using Monte Carlo Simulations
 
 Goods such as fresh food (unprocessed dairy products), meat, some pharmaceutical products etc. require special attention in the inventory management models because of their perishability.
 In case of such products restocking strategy becomes critical in managing stock, avoiding wastage and maximizing profits.
+This project will explore different restocking methods by modeling product expiration dates, demand, restocking amount, and restocking frequency to optimize for profit.
 
 ### Objective
-
-While the original project's objective was to test out 3 different restocking strategies through monte carlo simulation and calculate profit and loss
-for each of the strategies. 
+##### Project Enhancement: Perishable products Inventory Management using MC Simulation
+While the original project's objective was to test out 3 different restocking strategies through monte carlo simulation and calculate profit and loss for each of the strategies. 
 
 In this project, we improve and enhance the code and implementation of the inventory management simulation carried out earlier and test out two more scenarios.
+
+##### [Original Project]("https://github.com/LalitaTakle/2021Fall_finals")
 
 
 ## Original Scenarios
